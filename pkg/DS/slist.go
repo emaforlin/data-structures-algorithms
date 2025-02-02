@@ -1,5 +1,7 @@
 package DS
 
+import "fmt"
+
 /*
 c: Cell
 L: list struct
@@ -12,10 +14,8 @@ TODO: Implement Simple Linked List Methods
 [x] Len(): Returns the number of elements in the list.
 [x] Prepend(value): Adds a new element at the beginning of the list.
 [x] Add(value): Adds a new element to the end of the list.
-
-[ ] Get(index): Retrieves an element at a given index in the list.
-
-[ ] Insert(index, value): Inserts a value at a specific position in the list.
+[x] Get(index): Retrieves an element at a given index in the list.
+[x] Insert(index, value): Inserts a value at a specific position in the list.
 
 [ ] Remove(value): Removes the first occurrence of a value from the list.
 
@@ -31,10 +31,12 @@ TODO: Implement Simple Linked List Methods
 */
 
 type SList[T any] interface {
+	Print()
 	Len() int
 	Get(index int) (T, error)
 	Add(value T)
 	Prepend(value T)
+	Insert(index int, value T) error
 }
 
 type cell[T any] struct {
@@ -52,6 +54,14 @@ func NewSList[T any]() SList[T] {
 		head: nil,
 		size: 0,
 	}
+}
+
+func (L *SListImpl[T]) Print() {
+	fmt.Print("[ ")
+	for c := L.head; c != nil; c = c.next {
+		fmt.Printf("%#v ", *c.data)
+	}
+	fmt.Print("]")
 }
 
 func (L *SListImpl[T]) Len() int {
@@ -94,4 +104,27 @@ func (L *SListImpl[T]) Get(index int) (T, error) {
 	}
 
 	return *c.data, nil
+}
+
+func (L *SListImpl[T]) Insert(index int, value T) error {
+	if index < 0 || index > L.size {
+		return ErrIndexOutOfBound
+	}
+	newCell := &cell[T]{
+		data: &value,
+		next: nil,
+	}
+	if index == 0 {
+		newCell.next = L.head
+		L.head = newCell
+	} else {
+		c := L.head
+		for i := 0; i < index-1 && c.next != nil; i++ {
+			c = c.next
+		}
+		newCell.next = c.next
+		c.next = newCell
+	}
+	L.size++
+	return nil
 }

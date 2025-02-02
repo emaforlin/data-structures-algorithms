@@ -40,12 +40,12 @@ func TestSList_Add(t *testing.T) {
 	// Try getting invalid indexes
 	_, err := list.Get(-1)
 	if err == nil {
-		t.Fatal("Expected ErrIndexOutOfBound, got nil")
+		t.Error("Expected ErrIndexOutOfBound, got nil")
 	}
 
 	_, err = list.Get(1000)
 	if err == nil {
-		t.Fatal("Expected ErrIndexOutOfBound, got nil")
+		t.Error("Expected ErrIndexOutOfBound, got nil")
 	}
 
 }
@@ -64,7 +64,7 @@ func TestSList_Get(t *testing.T) {
 		t.Errorf("Expected nil, got %v", err)
 	}
 	if val1 != 10 {
-		t.Fatalf("Expected 10, got %d", val1)
+		t.Errorf("Expected 10, got %d", val1)
 	}
 
 	val2, err := list.Get(1)
@@ -72,10 +72,72 @@ func TestSList_Get(t *testing.T) {
 		t.Errorf("Expected nil, got %v", err)
 	}
 	if val1 != 10 {
-		t.Fatalf("Expected 10, got %d", val2)
+		t.Errorf("Expected 10, got %d", val2)
 	}
 
 	_, err = list.Get(2)
 	assert.ErrorIs(t, err, ErrIndexOutOfBound, "Expected error for not used index")
+
+}
+
+func TestSList_Insert(t *testing.T) {
+	var list = NewSList[string]()
+	list.Add("1")
+	list.Add("3")
+
+	err := list.Insert(-1, "invalid insertion")
+	assert.ErrorIs(t, err, ErrIndexOutOfBound, "Expected error for invalid index")
+
+	err = list.Insert(0, "prepend this string")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+
+	err = list.Insert(2, "insert this between '1' and '3'")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+
+	err = list.Insert(list.Len(), "append this string")
+	if err != nil {
+		t.Errorf("Expected nil, got %v", err)
+	}
+
+	val1, err := list.Get(0)
+	if err != nil {
+		t.Fatalf("Expected nil, got %v", err)
+	}
+
+	if val1 != "prepend this string" {
+		t.Errorf("Unexpected string: %s", val1)
+	}
+
+	val2, err := list.Get(1)
+	if err != nil {
+		t.Fatalf("Expected nil, got %v", err)
+	}
+
+	if val2 != "1" {
+		t.Errorf("Unexpected string: %s", val2)
+	}
+
+	val3, err := list.Get(2)
+	if err != nil {
+		t.Fatalf("Expected nil, got %v", err)
+	}
+
+	if val3 != "insert this between '1' and '3'" {
+		t.Errorf("Unexpected string: %s", val3)
+	}
+
+	val4, err := list.Get(3)
+	if err != nil {
+		t.Fatalf("Expected nil, got %v", err)
+	}
+
+	if val4 != "3" {
+		t.Errorf("Unexpected string: %s", val4)
+	}
+	list.Print()
 
 }

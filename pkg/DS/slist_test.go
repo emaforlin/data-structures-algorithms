@@ -63,16 +63,16 @@ func TestSList_Get(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
-	if val1 != 10 {
-		t.Errorf("Expected 10, got %d", val1)
+	if *val1 != 10 {
+		t.Errorf("Expected 10, got %d", *val1)
 	}
 
 	val2, err := list.Get(1)
 	if err != nil {
 		t.Errorf("Expected nil, got %v", err)
 	}
-	if val1 != 10 {
-		t.Errorf("Expected 10, got %d", val2)
+	if *val1 != 10 {
+		t.Errorf("Expected 10, got %d", *val2)
 	}
 
 	_, err = list.Get(2)
@@ -108,8 +108,8 @@ func TestSList_Insert(t *testing.T) {
 		t.Fatalf("Expected nil, got %v", err)
 	}
 
-	if val1 != "prepend this string" {
-		t.Errorf("Unexpected string: %s", val1)
+	if *val1 != "prepend this string" {
+		t.Errorf("Unexpected string: %s", *val1)
 	}
 
 	val2, err := list.Get(1)
@@ -117,8 +117,8 @@ func TestSList_Insert(t *testing.T) {
 		t.Fatalf("Expected nil, got %v", err)
 	}
 
-	if val2 != "1" {
-		t.Errorf("Unexpected string: %s", val2)
+	if *val2 != "1" {
+		t.Errorf("Unexpected string: %s", *val2)
 	}
 
 	val3, err := list.Get(2)
@@ -126,8 +126,8 @@ func TestSList_Insert(t *testing.T) {
 		t.Fatalf("Expected nil, got %v", err)
 	}
 
-	if val3 != "insert this between '1' and '3'" {
-		t.Errorf("Unexpected string: %s", val3)
+	if *val3 != "insert this between '1' and '3'" {
+		t.Errorf("Unexpected string: %s", *val3)
 	}
 
 	val4, err := list.Get(3)
@@ -135,9 +135,86 @@ func TestSList_Insert(t *testing.T) {
 		t.Fatalf("Expected nil, got %v", err)
 	}
 
-	if val4 != "3" {
-		t.Errorf("Unexpected string: %s", val4)
+	if *val4 != "3" {
+		t.Errorf("Unexpected string: %s", *val4)
 	}
 	list.Print()
 
+}
+
+func TestSList_Find(t *testing.T) {
+	list := SListImpl[int]{}
+	val1, val2, val3 := 10, 20, 30
+	list.head = &cell[int]{data: &val1, next: &cell[int]{data: &val2, next: &cell[int]{data: &val3, next: nil}}}
+	list.size = 3
+
+	tests := []struct {
+		value    int
+		expected int
+	}{
+		{10, 0},
+		{20, 1},
+		{30, 2},
+		{40, -1},
+	}
+
+	for _, test := range tests {
+		result, _ := list.Find(test.value)
+		if (result == nil && test.expected != -1) || (result != nil && *result != test.value) {
+			t.Errorf("Find(%d) = %v; want %d", test.value, result, test.expected)
+		}
+	}
+}
+
+func TestSList_RemoveAt(t *testing.T) {
+	list := NewSList[int]()
+	list.Add(10)
+	list.Add(20)
+	list.Add(30)
+	tests := []struct {
+		index        int
+		expectedSize int
+		error        error
+	}{
+		{1, 2, nil},                // Removing second element
+		{5, 2, ErrIndexOutOfBound}, // Out of bounds index
+		{0, 1, nil},
+	}
+
+	for _, test := range tests {
+		err := list.RemoveAt(test.index)
+		if err != test.error {
+			t.Errorf("RemoveAt(%d) returned error %v; want %v", test.index, err, test.error)
+		}
+		if list.Len() != test.expectedSize {
+			t.Errorf("After RemoveAt(%d), list size = %d; want %d", test.index, list.Len(), test.expectedSize)
+		}
+	}
+}
+
+func TestSList_Remove(t *testing.T) {
+	list := NewSList[int]()
+	list.Add(10)
+	list.Add(20)
+	list.Add(30)
+	tests := []struct {
+		value        int
+		expectedSize int
+		error        error
+	}{
+		{10, 2, nil},               // Removing second element
+		{560, 2, ErrValueNotFound}, // Out of bounds index
+		{30, 1, nil},
+	}
+
+	for _, test := range tests {
+		err := list.Remove(test.value)
+		if err != test.error {
+			t.Errorf("Remove(%d) returned error %v; want %v", test.value, err, test.error)
+		}
+		if list.Len() != test.expectedSize {
+			t.Errorf("After Remove(%d), list size = %d; want %d", test.value, list.Len(), test.expectedSize)
+		}
+	}
+	list.Print()
 }

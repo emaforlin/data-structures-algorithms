@@ -1,55 +1,61 @@
 package DS
 
-import "fmt"
+import (
+	"fmt"
+)
 
-/*
-c: Cell
-L: list struct
-e: element
-------------------------
-/*
-TODO: Implement Simple Linked List Methods
-
-[x] NewSList(): Creates a new empty linked list.
-[x] Len(): Returns the number of elements in the list.
-[x] Prepend(value): Adds a new element at the beginning of the list.
-[x] Add(value): Adds a new element to the end of the list.
-[x] Get(index): Retrieves an element at a given index in the list.
-[x] Insert(index, value): Inserts a value at a specific position in the list.
-
-[ ] Remove(value): Removes the first occurrence of a value from the list.
-
-[ ] RemoveAt(index): Removes an element at a specific index and returns it.
-
-[ ] Find(value): Searches for a value and returns its index if found.
-
-
-[ ] IsEmpty(): Checks if the list is empty.
-
-[ ] Print()
-    Prints the elements of the list for debugging.
-*/
-
-type SList[T any] interface {
+type SList[T comparable] interface {
 	Print()
 	Len() int
-	Get(index int) (T, error)
+	Get(index int) (*T, error)
 	Add(value T)
 	Prepend(value T)
 	Insert(index int, value T) error
+	Find(value T) (*T, error)
+	Remove(value T) error
+	RemoveAt(index int) error
 }
 
-type cell[T any] struct {
+type cell[T comparable] struct {
 	data *T
 	next *cell[T]
 }
 
-type SListImpl[T any] struct {
+type SListImpl[T comparable] struct {
 	head *cell[T]
 	size int
 }
 
-func NewSList[T any]() SList[T] {
+func indexOf[T comparable](node *cell[T], value T) (int, error) {
+	indx := indexOfR(node, value, 0)
+	if indx == -1 {
+		return indx, ErrValueNotFound
+	}
+	return indx, nil
+}
+
+func indexOfR[T comparable](c *cell[T], value T, index int) int {
+	if c == nil {
+		return -1
+	}
+	if *c.data == value {
+		return index
+	}
+	return indexOfR(c.next, value, index+1)
+}
+
+func (L *SListImpl[T]) advance(index int) *cell[T] {
+	c := L.head
+	for i := 0; i < index && c.next != nil; i++ {
+		c = c.next
+	}
+	if c != nil {
+		return c
+	}
+	return nil
+}
+
+func NewSList[T comparable]() SList[T] {
 	return &SListImpl[T]{
 		head: nil,
 		size: 0,
@@ -91,11 +97,9 @@ func (L *SListImpl[T]) Add(value T) {
 	L.size++
 }
 
-func (L *SListImpl[T]) Get(index int) (T, error) {
-	var zeroValue T
-
+func (L *SListImpl[T]) Get(index int) (*T, error) {
 	if index < 0 || index > (L.size-1) {
-		return zeroValue, ErrIndexOutOfBound
+		return nil, ErrIndexOutOfBound
 	}
 
 	var c = L.head
@@ -103,7 +107,7 @@ func (L *SListImpl[T]) Get(index int) (T, error) {
 		c = c.next
 	}
 
-	return *c.data, nil
+	return c.data, nil
 }
 
 func (L *SListImpl[T]) Insert(index int, value T) error {
@@ -127,4 +131,44 @@ func (L *SListImpl[T]) Insert(index int, value T) error {
 	}
 	L.size++
 	return nil
+}
+
+func (L *SListImpl[T]) Find(value T) (*T, error) {
+	index, err := indexOf(L.head, value)
+	if err != nil {
+		return nil, err
+	}
+	found, err := L.Get(index)
+	if err != nil {
+		return nil, err
+	}
+	return found, nil
+}
+
+func (L *SListImpl[T]) RemoveAt(index int) error {
+	if index < 0 || index > L.size {
+		return ErrIndexOutOfBound
+	}
+	if index == 0 {
+		L.head = L.head.next
+	} else {
+		cell := L.advance(index - 1)
+		if cell == nil {
+			return ErrValueNotFound
+		}
+
+		next := cell.next
+		cell.next = next.next
+	}
+
+	L.size--
+	return nil
+}
+
+func (L *SListImpl[T]) Remove(value T) error {
+	index, err := indexOf(L.head, value)
+	if err != nil {
+		return err
+	}
+	return L.RemoveAt(index)
 }
